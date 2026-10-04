@@ -9,7 +9,7 @@ Config.NPC = {
 }
 
 -- Vehicle appears here
-Config.VehicleSpawn = vector4(2902.3000, -1151.7689, 46.1766, 75.2453)
+Config.VehicleSpawn = vector4(2902.3000, -1150.7689, 46.1766, 75.2453)
 
 -- Prompt radius to open the rental board
 Config.PromptRadius = 3.0
