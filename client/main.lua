@@ -3,7 +3,13 @@ local npc = nil
 local npcBlip = nil
 local rentPrompt = nil
 local returnPrompt = nil
-local rental = nil -- { entity, expiresAt, label, model, minutes, total }
+local rental = nil -- { entity|nil, expiresAt, label, model|addonKey, minutes, total, kind }
+
+local function HasActiveRental()
+    if not rental then return false end
+    if rental.kind == "addon" then return true end
+    return rental.entity and DoesEntityExist(rental.entity)
+end
 
 local function Dbg(msg)
     if Config.Debug then print("[coi_rental] " .. msg) end
@@ -80,19 +86,24 @@ end
 local function OpenBoard()
     SetNuiFocus(true, true)
     local active = nil
-    if rental and rental.entity and DoesEntityExist(rental.entity) then
+    if HasActiveRental() then
         active = {
             label = rental.label,
             model = rental.model,
             remainingSec = math.max(0, math.floor((rental.expiresAt - GetGameTimer()) / 1000)),
         }
-    elseif rental then
-        rental = nil
-        SendNUIMessage({ action = "hideHud" })
+    end
+    -- Merge native (land) + addon (land/air, water skipped) into one NUI list
+    local list = {}
+    for _, v in ipairs(Config.Vehicles) do
+        list[#list + 1] = { model = v.model, label = v.label, category = v.category, base = v.base, perMin = v.perMin, kind = "native" }
+    end
+    for _, a in ipairs(Config.Addons or {}) do
+        list[#list + 1] = { model = a.addon, label = a.label, category = a.category, base = a.base, perMin = a.perMin, kind = "addon", addon = a.addon }
     end
     SendNUIMessage({
         action = "open",
-        vehicles = Config.Vehicles,
+        vehicles = list,
         minMinutes = Config.MinMinutes,
         maxMinutes = Config.MaxMinutes,
         defaultMinutes = Config.DefaultMinutes,
@@ -106,9 +117,13 @@ local function CloseBoard()
 end
 
 local function DeleteRental(silent)
-    if rental and rental.entity and DoesEntityExist(rental.entity) then
-        SetEntityAsMissionEntity(rental.entity, true, true)
-        DeleteVehicle(rental.entity)
+    if rental then
+        if rental.kind == "addon" then
+            pcall(ExecuteCommand, Config.AddonDeleteCommand or "delete_balboni")
+        elseif rental.entity and DoesEntityExist(rental.entity) then
+            SetEntityAsMissionEntity(rental.entity, true, true)
+            DeleteVehicle(rental.entity)
+        end
     end
     rental = nil
     SendNUIMessage({ action = "hideHud" })
@@ -117,8 +132,25 @@ local function DeleteRental(silent)
     end
 end
 
-local function SpawnRental(model, minutes, total)
+local function SpawnRental(model, minutes, total, kind, addon)
     DeleteRental(true)
+    local label = model
+    if kind == "addon" then
+        for _, a in ipairs(Config.Addons or {}) do
+            if a.addon == addon then label = a.label break end
+        end
+        if GetResourceState("coi_vehicles") ~= "started" then
+            TriggerEvent("coi_rental:client:notify", "Addon garage offline (start coi_vehicles).")
+            return
+        end
+        ExecuteCommand((Config.AddonSpawnCommand or "get") .. " " .. tostring(addon))
+        rental = { entity = nil, expiresAt = GetGameTimer() + (minutes * 60000), label = label, model = addon, minutes = minutes, total = total, kind = "addon" }
+        SendNUIMessage({ action = "tick", label = label, remainingSec = minutes * 60 })
+        TriggerEvent("coi_rental:client:notify",
+            ("Rented %s for %d min ($%.2f). It vanishes when time runs out."):format(label, minutes, total))
+        Dbg(("spawned addon %s for %d min"):format(tostring(addon), minutes))
+        return
+    end
     local s = Config.VehicleSpawn
     local hash = joaat(model)
     if not IsModelValid(hash) then
@@ -154,7 +186,7 @@ local function SpawnRental(model, minutes, total)
     for _, v in ipairs(Config.Vehicles) do
         if v.model == model then label = v.label break end
     end
-    rental = { entity = veh, expiresAt = GetGameTimer() + (minutes * 60000), label = label, model = model, minutes = minutes, total = total }
+    rental = { entity = veh, expiresAt = GetGameTimer() + (minutes * 60000), label = label, model = model, minutes = minutes, total = total, kind = "native" }
     SendNUIMessage({ action = "tick", label = label, remainingSec = minutes * 60 })
     TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
     TriggerEvent("coi_rental:client:notify",
@@ -168,8 +200,12 @@ CreateThread(function()
     local warned = false
     while true do
         Wait(5000)
-        if rental and rental.entity then
-            if not DoesEntityExist(rental.entity) then
+        if rental then
+            local gone = false
+            if rental.kind ~= "addon" then
+                gone = not (rental.entity and DoesEntityExist(rental.entity))
+            end
+            if gone then
                 rental = nil
                 warned = false
                 SendNUIMessage({ action = "hideHud" })
@@ -198,7 +234,7 @@ end)
 CreateThread(function()
     while true do
         Wait(1000)
-        if rental and rental.entity and DoesEntityExist(rental.entity) then
+        if HasActiveRental() then
             local left = rental.expiresAt - GetGameTimer()
             if left > 0 then
                 SendNUIMessage({ action = "tick", label = rental.label, remainingSec = math.floor(left / 1000) })
@@ -236,7 +272,7 @@ CreateThread(function()
                 nearNpc = true
             end
         end
-        local hasRental = rental and rental.entity and DoesEntityExist(rental.entity)
+        local hasRental = HasActiveRental()
         local showRent = nearNpc
         local showReturn = nearNpc and hasRental
 
@@ -256,9 +292,9 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent("coi_rental:client:rentApproved", function(model, minutes, total)
+RegisterNetEvent("coi_rental:client:rentApproved", function(model, minutes, total, kind, addon)
     CloseBoard()
-    SpawnRental(model, minutes, total)
+    SpawnRental(model, minutes, total, kind, addon)
 end)
 
 RegisterNetEvent("coi_rental:client:rentDenied", function()
@@ -267,7 +303,7 @@ end)
 
 RegisterNUICallback("rent", function(data, cb)
     if data and data.model then
-        TriggerServerEvent("coi_rental:server:requestRent", data.model, tonumber(data.minutes) or Config.DefaultMinutes)
+        TriggerServerEvent("coi_rental:server:requestRent", data.model, tonumber(data.minutes) or Config.DefaultMinutes, data.kind, data.addon)
     end
     cb({ ok = true })
 end)

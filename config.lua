@@ -64,13 +64,69 @@ Config.Vehicles = {
     { model = "cart04",          label = "Cart IV",          category = "Carts",    base = 8,  perMin = 0.5 },
     { model = "cart05",          label = "Cart V",           category = "Carts",    base = 8,  perMin = 0.5 },
     { model = "cart06",          label = "Cart VI",          category = "Carts",    base = 8,  perMin = 0.5 },
+}
 
-    -- Boats
-    { model = "canoe",           label = "Canoe",            category = "Boats",    base = 10, perMin = 0.8 },
-    { model = "pirogue",         label = "Pirogue",          category = "Boats",    base = 10, perMin = 0.8 },
-    { model = "rowboat",         label = "Rowboat",          category = "Boats",    base = 12, perMin = 0.8 },
-    { model = "skiff",           label = "Skiff",            category = "Boats",    base = 12, perMin = 0.8 },
-    { model = "keelboat",        label = "Keelboat",         category = "Boats",    base = 20, perMin = 1.2 },
+-- Addon rides from coi_vehicles (land + air only, water skipped).
+-- Spawned via coi_vehicles "/get <key>", removed via "delete_balboni".
+-- NOTE: addon stream files (.ytyp) must be present or the model won't load.
+Config.AddonSpawnCommand = "get"
+Config.AddonDeleteCommand = "delete_balboni"
+
+Config.Addons = {
+    -- Cars (land)
+    { addon = "truck",        label = "Truck",          category = "Cars",     base = 30, perMin = 2.0 },
+    { addon = "truckLifted",  label = "Truck Lifted",   category = "Cars",     base = 35, perMin = 2.0 },
+    { addon = "atv",          label = "ATV",            category = "Cars",     base = 25, perMin = 1.5 },
+    { addon = "delorean",     label = "Delorean",       category = "Cars",     base = 60, perMin = 4.0 },
+    { addon = "roadster",     label = "Roadster",       category = "Cars",     base = 55, perMin = 4.0 },
+    { addon = "franklin",     label = "Franklin",       category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "michael",      label = "Michael",        category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "trevor",       label = "Trevor",         category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "bat",          label = "Batmobile",      category = "Cars",     base = 60, perMin = 4.0 },
+    { addon = "batclassic",   label = "Batmobile Classic", category = "Cars", base = 55, perMin = 4.0 },
+    { addon = "lancer",       label = "Lancer",         category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "ironsport",    label = "Iron Sport",     category = "Cars",     base = 50, perMin = 3.5 },
+    { addon = "ironcharger",  label = "Iron Charger",   category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "ironimpala",   label = "Iron Impala",    category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "ironstang",    label = "Iron Stang",     category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "iron65stang",  label = "Iron 65 Stang",  category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "irontruck",    label = "Iron Truck",     category = "Cars",     base = 35, perMin = 2.5 },
+    { addon = "ironbigtruck", label = "Iron Big Truck", category = "Cars",     base = 40, perMin = 2.5 },
+    { addon = "policesuv",    label = "Police SUV",     category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "muscle",       label = "Muscle",         category = "Cars",     base = 45, perMin = 3.0 },
+    { addon = "hellcat",      label = "Hellcat",        category = "Cars",     base = 55, perMin = 4.0 },
+    { addon = "cyberhorse",   label = "Cyber Horse",    category = "Cars",     base = 50, perMin = 3.5 },
+    { addon = "ironhorse",    label = "Iron Horse",     category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "ironprime",    label = "Iron Prime",     category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "ironrancher",  label = "Iron Rancher",   category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "ironsuv",      label = "Iron SUV",       category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "vapidfordor",  label = "Vapid 4-Door",   category = "Cars",     base = 35, perMin = 2.5 },
+    { addon = "vapidtudor",   label = "Vapid 2-Door",   category = "Cars",     base = 35, perMin = 2.5 },
+    { addon = "gtr",          label = "GTR",            category = "Cars",     base = 55, perMin = 4.0 },
+    { addon = "malibu",       label = "Malibu",         category = "Cars",     base = 40, perMin = 3.0 },
+    { addon = "lambo",        label = "Lambo",          category = "Cars",     base = 60, perMin = 4.5 },
+    { addon = "classic",      label = "Classic",        category = "Cars",     base = 35, perMin = 2.5 },
+    { addon = "classic2",     label = "Classic II",     category = "Cars",     base = 35, perMin = 2.5 },
+    { addon = "sandrail",     label = "Sand Rail",      category = "Cars",     base = 30, perMin = 2.0 },
+
+    -- Bikes (land)
+    { addon = "dirtbike",     label = "Dirt Bike",      category = "Bikes",    base = 15, perMin = 1.0 },
+    { addon = "policebike",   label = "Police Bike",    category = "Bikes",    base = 18, perMin = 1.2 },
+    { addon = "micahcycle",   label = "Micah Cycle",    category = "Bikes",    base = 12, perMin = 1.0 },
+
+    -- Tank (land)
+    { addon = "irontank",     label = "Iron Tank",      category = "Tanks",    base = 100, perMin = 6.0 },
+
+    -- Aircraft (air)
+    { addon = "biplane",      label = "Biplane",        category = "Aircraft", base = 80, perMin = 5.0 },
+    { addon = "biplane2",     label = "Biplane II",     category = "Aircraft", base = 80, perMin = 5.0 },
+    { addon = "triplane",     label = "Triplane",       category = "Aircraft", base = 90, perMin = 5.0 },
+    { addon = "heli",         label = "Heli",           category = "Aircraft", base = 100, perMin = 6.0 },
+    { addon = "heli2",        label = "Heli II",        category = "Aircraft", base = 100, perMin = 6.0 },
+    { addon = "xwing",        label = "X-Wing",         category = "Aircraft", base = 150, perMin = 8.0 },
+    { addon = "a10",          label = "A-10",           category = "Aircraft", base = 150, perMin = 8.0 },
+    { addon = "osprey",       label = "Osprey",         category = "Aircraft", base = 140, perMin = 7.0 },
+    { addon = "cargobob",     label = "Cargobob",       category = "Aircraft", base = 140, perMin = 7.0 },
 }
 
 Config.Notify = {

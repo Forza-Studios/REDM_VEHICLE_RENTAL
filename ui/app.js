@@ -44,7 +44,7 @@ function render() {
       const card = document.createElement("div");
       card.className = "vehicle-card";
       card.innerHTML =
-        '<span class="veh-cat">' + v.category + '</span>' +
+        '<span class="veh-cat">' + v.category + (v.kind === "addon" ? " • ADDON" : "") + '</span>' +
         '<span class="veh-name">' + v.label + '</span>' +
         '<span class="veh-model">' + v.model + '</span>' +
         '<span class="veh-price">Base $' + Number(v.base).toFixed(2) +
@@ -59,7 +59,7 @@ function render() {
         fetch("https://coi_rental/rent", {
           method: "POST",
           headers: { "Content-Type": "application/json; charset=UTF-8" },
-          body: JSON.stringify({ model: v.model, minutes: minutes }),
+          body: JSON.stringify({ model: v.model, minutes: minutes, kind: v.kind, addon: v.addon }),
         });
         setTimeout(() => { btn.disabled = false; render(); }, 2500);
       };

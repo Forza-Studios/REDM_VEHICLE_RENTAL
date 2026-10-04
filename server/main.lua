@@ -7,10 +7,18 @@ if not Core and exports.vorp_core then
     pcall(function() Core = exports.vorp_core:GetCore() end)
 end
 
-local function FindVehicle(model)
+local function FindVehicle(model, kind, addon)
+    if kind == "addon" then
+        for _, v in ipairs(Config.Addons or {}) do
+            if v.addon == addon then
+                return v, "addon"
+            end
+        end
+        return nil
+    end
     for _, v in ipairs(Config.Vehicles) do
         if v.model == model then
-            return v
+            return v, "native"
         end
     end
     return nil
@@ -23,9 +31,10 @@ local function CalcTotal(entry, minutes)
 end
 
 -- Client asks to rent: validate, charge, approve spawn
-RegisterNetEvent("coi_rental:server:requestRent", function(model, minutes)
+-- data: model (native) or addon key + kind
+RegisterNetEvent("coi_rental:server:requestRent", function(model, minutes, kind, addon)
     local src = source
-    local entry = FindVehicle(model)
+    local entry, foundKind = FindVehicle(model, kind, addon)
     if not entry then
         TriggerClientEvent("coi_rental:client:notify", src, "Unknown vehicle.")
         return
@@ -57,5 +66,9 @@ RegisterNetEvent("coi_rental:server:requestRent", function(model, minutes)
     end
 
     character.removeCurrency(0, total)
-    TriggerClientEvent("coi_rental:client:rentApproved", src, entry.model, cleanMinutes, total)
+    if foundKind == "addon" then
+        TriggerClientEvent("coi_rental:client:rentApproved", src, entry.addon, cleanMinutes, total, "addon", entry.addon)
+    else
+        TriggerClientEvent("coi_rental:client:rentApproved", src, entry.model, cleanMinutes, total, "native", nil)
+    end
 end)
