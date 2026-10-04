@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vehicle Rental</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="vignette"></div>
+
+  <div id="rental-board" class="rdr-panel hidden">
+    <div class="panel-frame">
+      <div class="brass-corner tl"></div>
+      <div class="brass-corner tr"></div>
+      <div class="brass-corner bl"></div>
+      <div class="brass-corner br"></div>
+
+      <div class="header-section">
+        <div class="ornament-divider">&#10022; &#9472;&#9472;&#9472; &#10022; &#9472;&#9472;&#9472; &#10022;</div>
+        <h1 class="rdr-title">STABLE &amp; LIVERY</h1>
+        <h2 class="rdr-subtitle">VEHICLE RENTAL LEDGER</h2>
+        <div class="ornament-divider">&#10022; &#9472;&#9472;&#9472; &#10022; &#9472;&#9472;&#9472; &#10022;</div>
+      </div>
+
+      <div class="duration-bar">
+        <div class="duration-left">
+          <span class="duration-label">RENTAL TIME (MIN)</span>
+          <div class="duration-controls">
+            <button class="quick-btn" data-min="5">5</button>
+            <button class="quick-btn" data-min="15">15</button>
+            <button class="quick-btn" data-min="30">30</button>
+            <button class="quick-btn" data-min="60">60</button>
+            <input id="minutes" type="number" min="1" max="120" value="15">
+          </div>
+          <input id="minutes-range" type="range" min="1" max="120" value="15">
+        </div>
+        <div class="duration-right">
+          <span class="hint">Timer starts at purchase. Vehicle vanishes on expiry. One rental at a time.</span>
+          <span id="denied" class="denied hidden">Not enough cash.</span>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" data-cat="All">ALL</button>
+        <button class="filter-btn" data-cat="Coaches">COACHES</button>
+        <button class="filter-btn" data-cat="Wagons">WAGONS</button>
+        <button class="filter-btn" data-cat="Carts">CARTS</button>
+        <button class="filter-btn" data-cat="Boats">BOATS</button>
+      </div>
+
+      <div id="vehicle-grid" class="vehicle-grid"></div>
+
+      <div class="panel-footer">
+        <button id="btn-close" class="rdr-btn btn-secondary"><span class="btn-text">CLOSE LEDGER</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
