@@ -2,7 +2,8 @@
 local npc = nil
 local npcBlip = nil
 local rentPrompt = nil
-local rental = nil -- { entity, expiresAt }
+local returnPrompt = nil
+local rental = nil -- { entity, expiresAt, label, model, minutes, total }
 
 local function Dbg(msg)
     if Config.Debug then print("[coi_rental] " .. msg) end
@@ -77,18 +78,25 @@ local function AddNpcBlip()
 end
 
 local function OpenBoard()
-    if rental and rental.entity and DoesEntityExist(rental.entity) then
-        local remaining = math.max(0, math.ceil((rental.expiresAt - GetGameTimer()) / 60000))
-        TriggerEvent("coi_rental:client:notify", ("You already have a rental (%d min left)."):format(remaining))
-        return
-    end
     SetNuiFocus(true, true)
+    local active = nil
+    if rental and rental.entity and DoesEntityExist(rental.entity) then
+        active = {
+            label = rental.label,
+            model = rental.model,
+            remainingSec = math.max(0, math.floor((rental.expiresAt - GetGameTimer()) / 1000)),
+        }
+    elseif rental then
+        rental = nil
+        SendNUIMessage({ action = "hideHud" })
+    end
     SendNUIMessage({
         action = "open",
         vehicles = Config.Vehicles,
         minMinutes = Config.MinMinutes,
         maxMinutes = Config.MaxMinutes,
         defaultMinutes = Config.DefaultMinutes,
+        activeRental = active,
     })
 end
 
@@ -103,6 +111,7 @@ local function DeleteRental(silent)
         DeleteVehicle(rental.entity)
     end
     rental = nil
+    SendNUIMessage({ action = "hideHud" })
     if not silent then
         TriggerEvent("coi_rental:client:notify", "Rental returned.")
     end
@@ -141,7 +150,12 @@ local function SpawnRental(model, minutes, total)
     if Citizen.InvokeNative(0x8CA2D9D0C290AC50, veh) then -- _SET_VEHICLE_ON_GROUND_PROPERLY (guarded)
     end
     pcall(SetVehicleOnGroundProperly, veh)
-    rental = { entity = veh, expiresAt = GetGameTimer() + (minutes * 60000) }
+    local label = model
+    for _, v in ipairs(Config.Vehicles) do
+        if v.model == model then label = v.label break end
+    end
+    rental = { entity = veh, expiresAt = GetGameTimer() + (minutes * 60000), label = label, model = model, minutes = minutes, total = total }
+    SendNUIMessage({ action = "tick", label = label, remainingSec = minutes * 60 })
     TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
     TriggerEvent("coi_rental:client:notify",
         ("Rented for %d min ($%.2f). It vanishes when time runs out."):format(minutes, total))
@@ -149,6 +163,7 @@ local function SpawnRental(model, minutes, total)
 end
 
 -- Expiry watchdog: destroy when the timer runs out (timer starts at purchase)
+-- Also pushes live countdown ticks to the HUD every tick.
 CreateThread(function()
     local warned = false
     while true do
@@ -157,6 +172,7 @@ CreateThread(function()
             if not DoesEntityExist(rental.entity) then
                 rental = nil
                 warned = false
+                SendNUIMessage({ action = "hideHud" })
             else
                 local left = rental.expiresAt - GetGameTimer()
                 if left <= 0 then
@@ -164,9 +180,12 @@ CreateThread(function()
                     warned = false
                     TriggerEvent("coi_rental:client:notify", "Rental time expired. Vehicle collected.")
                     SendNUIMessage({ action = "expired" })
-                elseif left < 60000 and not warned then
-                    warned = true
-                    TriggerEvent("coi_rental:client:notify", "Rental expires in 1 minute.")
+                else
+                    SendNUIMessage({ action = "tick", label = rental.label, remainingSec = math.floor(left / 1000) })
+                    if left < 60000 and not warned then
+                        warned = true
+                        TriggerEvent("coi_rental:client:notify", "Rental expires in 1 minute.")
+                    end
                 end
             end
         else
@@ -175,7 +194,22 @@ CreateThread(function()
     end
 end)
 
--- Prompt thread: hold E near the NPC to open the board
+-- Smooth 1s HUD countdown (board can stay closed, HUD always shows it)
+CreateThread(function()
+    while true do
+        Wait(1000)
+        if rental and rental.entity and DoesEntityExist(rental.entity) then
+            local left = rental.expiresAt - GetGameTimer()
+            if left > 0 then
+                SendNUIMessage({ action = "tick", label = rental.label, remainingSec = math.floor(left / 1000) })
+            end
+        else
+            Wait(2000)
+        end
+    end
+end)
+
+-- Prompts near the NPC: rent board always, plus END RENTAL when one is active
 CreateThread(function()
     rentPrompt = PromptRegisterBegin()
     PromptSetControlAction(rentPrompt, 0xCEFD9220) -- E / INPUT_CONTEXT_A
@@ -185,19 +219,38 @@ CreateThread(function()
     PromptSetHoldMode(rentPrompt, 800)
     PromptRegisterEnd(rentPrompt)
 
+    returnPrompt = PromptRegisterBegin()
+    PromptSetControlAction(returnPrompt, 0xD9D0E1C0) -- SPACE / INPUT_VEH_DIVE (separate key so both show)
+    PromptSetText(returnPrompt, CreateVarString(10, "LITERAL_STRING", "End rental"))
+    PromptSetVisible(returnPrompt, false)
+    PromptSetEnabled(returnPrompt, false)
+    PromptSetHoldMode(returnPrompt, 800)
+    PromptRegisterEnd(returnPrompt)
+
     while true do
         Wait(0)
-        local show = false
+        local nearNpc = false
         if npc and DoesEntityExist(npc) then
             local d = #(GetEntityCoords(PlayerPedId()) - vector3(Config.NPC.coords.x, Config.NPC.coords.y, Config.NPC.coords.z))
             if d < Config.PromptRadius then
-                show = true
+                nearNpc = true
             end
         end
-        PromptSetVisible(rentPrompt, show)
-        PromptSetEnabled(rentPrompt, show)
-        if show and PromptHasHoldModeCompleted(rentPrompt) then
+        local hasRental = rental and rental.entity and DoesEntityExist(rental.entity)
+        local showRent = nearNpc
+        local showReturn = nearNpc and hasRental
+
+        PromptSetVisible(rentPrompt, showRent)
+        PromptSetEnabled(rentPrompt, showRent)
+        PromptSetVisible(returnPrompt, showReturn)
+        PromptSetEnabled(returnPrompt, showReturn)
+
+        if showRent and PromptHasHoldModeCompleted(rentPrompt) then
             OpenBoard()
+            Wait(1000)
+        elseif showReturn and PromptHasHoldModeCompleted(returnPrompt) then
+            DeleteRental(false)
+            SendNUIMessage({ action = "hideHud" })
             Wait(1000)
         end
     end
@@ -221,6 +274,13 @@ end)
 
 RegisterNUICallback("close", function(_, cb)
     SetNuiFocus(false, false)
+    cb({ ok = true })
+end)
+
+RegisterNUICallback("endRental", function(_, cb)
+    DeleteRental(false)
+    SendNUIMessage({ action = "hideHud" })
+    CloseBoard()
     cb({ ok = true })
 end)
 
@@ -253,4 +313,5 @@ AddEventHandler("onResourceStop", function(res)
     if npcBlip and DoesBlipExist(npcBlip) then RemoveBlip(npcBlip) end
     npcBlip = nil
     if rentPrompt then PromptDelete(rentPrompt) rentPrompt = nil end
+    if returnPrompt then PromptDelete(returnPrompt) returnPrompt = nil end
 end)

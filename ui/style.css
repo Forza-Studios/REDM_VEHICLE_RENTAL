@@ -121,3 +121,32 @@ body {
 }
 .rdr-btn .btn-text { color: var(--parchment); letter-spacing: 2px; font-size: 13px; }
 .rdr-btn:hover { background: rgba(201,162,39,0.15); }
+.btn-danger { border-color: #a03a2a; }
+.btn-danger .btn-text { color: #e8a08a; }
+.btn-danger:hover { background: rgba(160,58,42,0.2); }
+
+/* Always-on live countdown HUD (top-center, visible with board closed) */
+.rental-hud {
+  position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; align-items: center;
+  background: rgba(18, 12, 7, 0.92);
+  border: 1px solid var(--gold);
+  padding: 8px 18px; font-size: 14px; letter-spacing: 2px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+.rental-hud .hud-key { color: var(--gold); font-size: 11px; }
+.rental-hud #hud-time { font-size: 18px; font-weight: bold; color: var(--parchment); }
+.rental-hud.urgent { border-color: #a03a2a; }
+.rental-hud.urgent #hud-time { color: #e07a5f; }
+
+/* Active rental strip inside the ledger */
+.active-rental {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border: 1px solid rgba(201,162,39,0.6);
+  background: rgba(201,162,39,0.08);
+  padding: 10px 14px; margin-bottom: 12px;
+}
+.active-info { display: flex; gap: 10px; align-items: baseline; }
+.active-key { font-size: 11px; letter-spacing: 2px; color: var(--gold); }
+#active-label { font-size: 15px; }
+#active-time { font-size: 18px; font-weight: bold; color: var(--gold); }

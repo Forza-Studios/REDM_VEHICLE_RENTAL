@@ -8,6 +8,13 @@
 <body>
   <div id="vignette"></div>
 
+  <!-- Always-on live countdown HUD (visible while a rental is active, board closed or open) -->
+  <div id="rental-hud" class="rental-hud hidden">
+    <span class="hud-key">RENTAL</span>
+    <span id="hud-label">—</span>
+    <span id="hud-time">00:00</span>
+  </div>
+
   <div id="rental-board" class="rdr-panel hidden">
     <div class="panel-frame">
       <div class="brass-corner tl"></div>
@@ -46,6 +53,15 @@
         <button class="filter-btn" data-cat="Wagons">WAGONS</button>
         <button class="filter-btn" data-cat="Carts">CARTS</button>
         <button class="filter-btn" data-cat="Boats">BOATS</button>
+      </div>
+
+      <div id="active-rental" class="active-rental hidden">
+        <div class="active-info">
+          <span class="active-key">ACTIVE RENTAL</span>
+          <span id="active-label">—</span>
+          <span id="active-time">00:00</span>
+        </div>
+        <button id="btn-end-rental" class="rdr-btn btn-danger"><span class="btn-text">END RENTAL NOW</span></button>
       </div>
 
       <div id="vehicle-grid" class="vehicle-grid"></div>

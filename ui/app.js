@@ -9,6 +9,22 @@ const grid = document.getElementById("vehicle-grid");
 const minutesInput = document.getElementById("minutes");
 const minutesRange = document.getElementById("minutes-range");
 const denied = document.getElementById("denied");
+const hud = document.getElementById("rental-hud");
+const hudLabel = document.getElementById("hud-label");
+const hudTime = document.getElementById("hud-time");
+const activeBox = document.getElementById("active-rental");
+const activeLabel = document.getElementById("active-label");
+const activeTime = document.getElementById("active-time");
+
+function fmtClock(sec) {
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? h + ":" + mm + ":" + ss : mm + ":" + ss;
+}
 
 function clampMinutes(v) {
   v = Math.floor(Number(v) || minMinutes);
@@ -82,6 +98,17 @@ document.getElementById("btn-close").addEventListener("click", () => {
   board.classList.add("hidden");
 });
 
+document.getElementById("btn-end-rental").addEventListener("click", () => {
+  fetch("https://coi_rental/endRental", {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=UTF-8" },
+    body: JSON.stringify({}),
+  });
+  activeBox.classList.add("hidden");
+  hud.classList.add("hidden");
+  board.classList.add("hidden");
+});
+
 window.addEventListener("message", (e) => {
   const d = e.data || {};
   if (d.action === "open") {
@@ -93,9 +120,39 @@ window.addEventListener("message", (e) => {
     minutesRange.min = minMinutes;
     minutesRange.max = maxMinutes;
     syncMinutes(d.defaultMinutes || 15);
+    if (d.activeRental) {
+      activeBox.classList.remove("hidden");
+      activeLabel.textContent = d.activeRental.label || d.activeRental.model || "Rental";
+      activeTime.textContent = fmtClock(d.activeRental.remainingSec);
+      hud.classList.remove("hidden");
+      hudLabel.textContent = activeLabel.textContent;
+      hudTime.textContent = activeTime.textContent;
+    } else {
+      activeBox.classList.add("hidden");
+    }
     board.classList.remove("hidden");
+  } else if (d.action === "tick") {
+    const clock = fmtClock(d.remainingSec);
+    hud.classList.remove("hidden");
+    hudLabel.textContent = d.label || "Rental";
+    hudTime.textContent = clock;
+    hud.classList.toggle("urgent", (Number(d.remainingSec) || 0) < 60);
+    if (!activeBox.classList.contains("hidden")) {
+      activeTime.textContent = clock;
+    } else if (!board.classList.contains("hidden")) {
+      activeBox.classList.remove("hidden");
+      activeLabel.textContent = d.label || "Rental";
+      activeTime.textContent = clock;
+    }
+  } else if (d.action === "hideHud") {
+    hud.classList.add("hidden");
+    activeBox.classList.add("hidden");
   } else if (d.action === "close" || d.action === "expired") {
     board.classList.add("hidden");
+    if (d.action === "expired") {
+      hud.classList.add("hidden");
+      activeBox.classList.add("hidden");
+    }
   } else if (d.action === "denied") {
     denied.classList.remove("hidden");
   }
