@@ -143,7 +143,10 @@ local function SpawnRental(model, minutes, total, kind, addon)
             TriggerEvent("coi_rental:client:notify", "Addon garage offline (start coi_vehicles).")
             return
         end
-        ExecuteCommand((Config.AddonSpawnCommand or "get") .. " " .. tostring(addon))
+        -- Fixed pad spawn: everything lands on Config.VehicleSpawn
+        local s = Config.VehicleSpawn
+        ExecuteCommand(("%s %s %.4f %.4f %.4f %.4f"):format(
+            Config.AddonSpawnCommand or "get", tostring(addon), s.x, s.y, s.z, s.w))
         rental = { entity = nil, expiresAt = GetGameTimer() + (minutes * 60000), label = label, model = addon, minutes = minutes, total = total, kind = "addon" }
         SendNUIMessage({ action = "tick", label = label, remainingSec = minutes * 60 })
         TriggerEvent("coi_rental:client:notify",

@@ -63,8 +63,11 @@ Rules:
 How the wiring works:
 
 - Rent: `coi_rental` charges VORP cash server-side, then runs
-  `ExecuteCommand("<AddonSpawnCommand> <key>")` (default `get`, see
-  `Config.AddonSpawnCommand`), which reuses the addon's own attach/spawn logic.
+  `ExecuteCommand("<AddonSpawnCommand> <key> <x> <y> <z> <heading>")`
+  (default `get`, see `Config.AddonSpawnCommand`) with
+  `Config.VehicleSpawn`, so **every** rental — native or addon — lands on
+  the same pad. The addon pack accepts the optional coords (player-relative
+  when omitted, so plain `/get <name>` still works as before).
 - Expiry/return: runs `ExecuteCommand("<AddonDeleteCommand>")` (default
   `delete_balboni`, see `Config.AddonDeleteCommand`).
 - If `coi_vehicles` isn't started you get "Addon garage offline."
