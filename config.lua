@@ -3,7 +3,7 @@ Config = {}
 
 -- Rental clerk NPC
 Config.NPC = {
-    model = "MP_FM_BOUNTYTARGET_FEMALES_DLC008_01",
+    model = "cs_valprostitute_02",
     coords = vector4(2907.3015, -1166.8540, 46.1329, 97.8817),
     scenario = "WORLD_HUMAN_SMOKE_INTERACTION",
 }
